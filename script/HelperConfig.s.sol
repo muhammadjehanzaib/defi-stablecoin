@@ -36,9 +36,8 @@ contract HelperConfig is Script {
             weth: 0xdd13E55209Fd76AfE204dBda4007C227904f0a81,
             wbtc: 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063,
             deployerKey: vm.envUint("PRIVATE_KEY")
-        })
+        });
         // deployerKey: vm.envUint("PRIVATE_KEY")
-        ;
     }
 
     function getOrCreateAnvilETHConfig() public returns (NetworkConfig memory) {
