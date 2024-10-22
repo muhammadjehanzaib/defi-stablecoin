@@ -17,7 +17,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__HealthFactorIsBelowMinimum(uint256 healthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__BreaksHealthFactorOk();
-    error DSCEngine__HealthFactorNotImproved();j
+    error DSCEngine__HealthFactorNotImproved();
 
     uint256 private constant ADDITIONAL_FEE_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
@@ -134,7 +134,7 @@ contract DSCEngine is ReentrancyGuard {
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateral, debtToCover);
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
-        _redeemCollateral(collateral, tokenAmountFromDebtCovered, user, msg.sender);
+        _redeemCollateral(collateral, totalCollateralToRedeem, user, msg.sender);
         _burnDsc(debtToCover, user, msg.sender);
 
         uint256 endingUserHealthFactor = _healthFactor(user);
@@ -169,7 +169,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function _burnDsc(uint256 amountDscToBurn, address onBehalfOf, address dscFrom) private {
-        s_DSCMinted[onBehalfOf] -= amount;
+        s_DSCMinted[onBehalfOf] -= amountDscToBurn;
         bool success = i_DSCADDRESS.transferFrom(dscFrom, address(this), amountDscToBurn);
         if (!success) {
             revert DSCEngine__TransferFailed();
@@ -214,5 +214,10 @@ contract DSCEngine is ReentrancyGuard {
         // we will explicitly add 10(1e10) more decimals here in order to get exact value
         // after it all we will divide the whole equation  by 1e18 in order to get value in decimals
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * amount) / PRECISION;
+    }
+
+    function getAccontInnformation(address user) public  view returns (address, uint256) {{
+        (uint256 totalDscMinted, uint256 totalValueInUSD) =  _getAccountInformation(user);
+        return  (totalDscMinted, totalValueInUSD);
     }
 }

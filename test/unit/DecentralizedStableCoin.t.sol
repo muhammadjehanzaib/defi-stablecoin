@@ -6,8 +6,10 @@ import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {ERC20Mock} from "../Mocks/ERC20Mock.sol";
 
 contract TestDSC is Test {
+    // error DSCEngine__NeedMoreThanZero();
     DecentralizedStableCoin decentralizedStableCoin;
     DSCEngine dscEngine;
     DeployDSC deployDSC;
@@ -24,7 +26,9 @@ contract TestDSC is Test {
         fieldPlayer = decentralizedStableCoin.owner();
     }
 
-    // DSC Engin Tests
+    ///////////////////////////////////
+    // DSC Engin Tests ////////////////
+    ///////////////////////////////////
 
     function testGetUsedValue() public view {
         uint256 ethAmount = 15e18;
@@ -34,7 +38,18 @@ contract TestDSC is Test {
         assertEq(expectedUsd, actualUsd);
     }
 
-    // Decentralized Stable Coin Tests
+    function testRevertIfCollateralZero() public {
+        vm.startPrank(fieldPlayer);
+        ERC20Mock(weth).approveInternal(address(dscEngine), fieldPlayer, 10 ether);
+
+        vm.expectRevert(DSCEngine.DSCEngine__NeedMoreThanZero.selector);
+        dscEngine.depositCollateral(weth, 0);
+        vm.stopPrank();
+    }
+
+    ///////////////////////////////////
+    //Decentralized Stable Coin Tests//
+    ///////////////////////////////////
     function testAmountZeroRevert() public {
         vm.expectRevert();
         decentralizedStableCoin.burn(0);
