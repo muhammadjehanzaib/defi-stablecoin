@@ -163,6 +163,7 @@ contract DSCEngine is ReentrancyGuard {
         // total DSC minted
         // total collateral VALUE
         (uint256 totalDSCMinted, uint256 collateralInValueUsd) = _getAccountInformation(user);
+        if(totalDSCMinted == 0) return type(uint256).max;
         uint256 collateralAdjustedForThreshold = (collateralInValueUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         //
         return (collateralAdjustedForThreshold * PRECISION) / totalDSCMinted;
@@ -216,7 +217,7 @@ contract DSCEngine is ReentrancyGuard {
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * amount) / PRECISION;
     }
 
-    function getAccontInnformation(address user) public  view returns (address, uint256) {{
+    function getAccontInformation(address user) public  view returns (uint256, uint256) {
         (uint256 totalDscMinted, uint256 totalValueInUSD) =  _getAccountInformation(user);
         return  (totalDscMinted, totalValueInUSD);
     }
