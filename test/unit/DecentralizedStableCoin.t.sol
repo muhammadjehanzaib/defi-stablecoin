@@ -15,15 +15,47 @@ contract TestDSC is Test {
     DeployDSC deployDSC;
     HelperConfig config;
     address ethUSDPriceFee;
+    address btcUSDPriceFee;
     address weth;
+    address wbtc;
     address public fieldPlayer = makeAddr("fieldPlayer");
+    uint256 constant public AMOUNT_COLLATERAL = 10 ether;
+    uint256 constant public AMOUNT_TO_MINT = 100 ether;
+    uint256 constant public STARTING_BALANCE = 20 ether;
 
     function setUp() external {
         deployDSC = new DeployDSC();
         // vm.prank(fieldPlayer);
         (decentralizedStableCoin, dscEngine, config) = deployDSC.run();
-        (ethUSDPriceFee,, weth,,) = config.activeNetworkConfig();
+        (ethUSDPriceFee,btcUSDPriceFee, weth, wbtc,) = config.activeNetworkConfig();
         fieldPlayer = decentralizedStableCoin.owner();
+        ERC20Mock(weth).mint(fieldPlayer,  STARTING_BALANCE);
+        ERC20Mock(wbtc).mint(fieldPlayer,  STARTING_BALANCE);
+    }
+
+    ///////////////////////////////////
+    // constructor Tests //////////////
+    ///////////////////////////////////
+    address[] public tokenAddress;
+    address[] public priceFeedAddress;
+
+    function testRevertsIfTokenLengthDoesnotMactchPriceFee () public{
+        tokenAddress.push(weth);
+        priceFeedAddress.push(ethUSDPriceFee);
+        priceFeedAddress.push(ethUSDPriceFee);
+
+        vm.expectRevert(DSCEngine.DSCEngine__TokenAddressAndPriceFeedAddressesLengthMustBeSame.selector);
+        new DSCEngine(tokenAddress, priceFeedAddress,address(decentralizedStableCoin));
+    }
+
+    function testGetTokenAmountFormUSD() public view{
+        uint256 usdAmount = 100 ether;
+        uint256 expectedWeth = 0.05 ether;
+        // 2000 / 100
+        uint256 pirceInWei = dscEngine.getTokenAmountFromUsd(weth, usdAmount);
+
+        assertEq(expectedWeth,pirceInWei);
+
     }
 
     ///////////////////////////////////
@@ -44,6 +76,60 @@ contract TestDSC is Test {
 
         vm.expectRevert(DSCEngine.DSCEngine__NeedMoreThanZero.selector);
         dscEngine.depositCollateral(weth, 0);
+        vm.stopPrank();
+    }
+
+
+    function testRevertWithUnapprovedCollateral() public {
+        ERC20Mock ranToken = new ERC20Mock("Random Token","RAN", fieldPlayer, 1002 ether);
+        vm.startPrank(fieldPlayer);
+        vm.expectRevert(DSCEngine.DSCEngine__NotAllowedToken.selector);
+        dscEngine.depositCollateral(address(ranToken), 10 ether);
+        vm.stopPrank();
+    }
+
+    modifier depositedCollateral() {
+        vm.startPrank(fieldPlayer);
+        ERC20Mock(weth).approve(address(dscEngine),AMOUNT_COLLATERAL);
+        dscEngine.depositCollateral(weth, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+        _;
+    }
+
+    function testCanDespositedWithoutMinting()  public depositedCollateral {
+        uint256 userBalance = decentralizedStableCoin.balanceOf(fieldPlayer);
+        console.log(userBalance);
+        assertEq(userBalance, 0);
+    }
+
+    function testCanDepositCollateralAndAccountInfo() public depositedCollateral{
+        (uint256 totalDSCMinted, uint256 collateralValueInUsd)  = dscEngine.getAccontInformation(fieldPlayer);
+
+        uint256 expectectedTotalDscMinted = 0;
+        uint256 expectedDepositedAmmount= dscEngine.getTokenAmountFromUsd(weth, collateralValueInUsd);
+        assertEq(totalDSCMinted, expectectedTotalDscMinted);
+        assertEq(AMOUNT_COLLATERAL, expectedDepositedAmmount);
+    }
+
+    modifier depositedCollateralAndMintDSC() {
+        vm.startPrank(fieldPlayer);
+        ERC20Mock(weth).approve(address(dscEngine),AMOUNT_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL,AMOUNT_TO_MINT);
+        vm.stopPrank();
+        _;
+    }
+
+    function testCanMintWithDepositedCollateral() public depositedCollateralAndMintDSC{
+        uint256 userBalance = decentralizedStableCoin.balanceOf(fieldPlayer);
+        assertEq(userBalance, AMOUNT_TO_MINT);
+    }
+
+    function testRevertsIfMinitedAmountZero() public {
+        vm.startPrank(fieldPlayer);
+        ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);
+        dscEngine.depositCollateralAndMintDsc(weth,AMOUNT_COLLATERAL,AMOUNT_TO_MINT);
+        vm.expectRevert(DSCEngine.DSCEngine__NeedMoreThanZero.selector);
+        dscEngine.mintDsc(0);
         vm.stopPrank();
     }
 
