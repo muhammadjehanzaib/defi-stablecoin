@@ -118,7 +118,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
-        _burnDsc(amount,msg.sender, msg.sender);
+        _burnDsc(amount, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -163,7 +163,7 @@ contract DSCEngine is ReentrancyGuard {
         // total DSC minted
         // total collateral VALUE
         (uint256 totalDSCMinted, uint256 collateralInValueUsd) = _getAccountInformation(user);
-        if(totalDSCMinted == 0) return type(uint256).max;
+        if (totalDSCMinted == 0) return type(uint256).max;
         uint256 collateralAdjustedForThreshold = (collateralInValueUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         //
         return (collateralAdjustedForThreshold * PRECISION) / totalDSCMinted;
@@ -217,8 +217,8 @@ contract DSCEngine is ReentrancyGuard {
         return ((uint256(price) * ADDITIONAL_FEE_PRECISION) * amount) / PRECISION;
     }
 
-    function getAccontInformation(address user) public  view returns (uint256, uint256) {
-        (uint256 totalDscMinted, uint256 totalValueInUSD) =  _getAccountInformation(user);
-        return  (totalDscMinted, totalValueInUSD);
+    function getAccontInformation(address user) public view returns (uint256, uint256) {
+        (uint256 totalDscMinted, uint256 totalValueInUSD) = _getAccountInformation(user);
+        return (totalDscMinted, totalValueInUSD);
     }
 }
