@@ -212,7 +212,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFee = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFee.staleCheckLatestRoundData(); 
+        (, int256 price,,,) = priceFee.staleCheckLatestRoundData();
         // 1 Eth = $1000
         // we will get in return 1000 * 1e8 (Becuase usdt has 8 decimals)
         // we will explicitly add 10(1e10) more decimals here in order to get exact value
