@@ -59,7 +59,7 @@ contract Handler is Test {
         dsce.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
         userWithCollateralDeposited.push(msg.sender);
-        timeDepositCollateralCalled ++;
+        timeDepositCollateralCalled++;
     }
 
     function redeemCollaterl(uint256 collateralSeed, uint256 amountCollateral) public {
