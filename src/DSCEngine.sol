@@ -19,6 +19,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BreaksHealthFactorOk();
     error DSCEngine__HealthFactorNotImproved();
 
+    DecentralizedStableCoin private immutable i_DSCADDRESS;
+
     uint256 private constant ADDITIONAL_FEE_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
@@ -30,7 +32,6 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposite;
     mapping(address user => uint256 amountDscToMinted) private s_DSCMinted;
     address[] private s_collateralTokens;
-    DecentralizedStableCoin private immutable i_DSCADDRESS;
 
     event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
     event CollateralRedeemed(
@@ -87,7 +88,6 @@ contract DSCEngine is ReentrancyGuard {
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
-        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
@@ -220,5 +220,17 @@ contract DSCEngine is ReentrancyGuard {
     function getAccontInformation(address user) public view returns (uint256, uint256) {
         (uint256 totalDscMinted, uint256 totalValueInUSD) = _getAccountInformation(user);
         return (totalDscMinted, totalValueInUSD);
+    }
+
+    function getCollateralTokens() external view returns (address[] memory) {
+        return s_collateralTokens;
+    }
+
+    function getCollateralTokenPriceFeed(address token) external view returns (address) {
+        return s_priceFeeds[token];
+    }
+
+    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+        return s_collateralDeposite[user][token];
     }
 }
