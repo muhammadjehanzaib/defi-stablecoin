@@ -74,6 +74,11 @@ contract Handler is Test {
         dsce.redeemCollateral(address(collateral), amountCollateral);
     }
 
+    // function updateCollateralPrice(uint96 _newPrice) public {
+    //     int256 newPrice = int256(uint256(_newPrice));
+    //     ethUsdPriceFeed.updateAnswer(newPrice);
+    // }
+
     function _getCollateralSFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
         if (collateralSeed % 2 == 0) {
             return weth;
