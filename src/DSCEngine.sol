@@ -5,6 +5,7 @@ import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {OracleLib} from "./Libraries/OracleLib.sol";
 
 /**
  * @title DSCEngine
@@ -18,6 +19,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__MintFailed();
     error DSCEngine__BreaksHealthFactorOk();
     error DSCEngine__HealthFactorNotImproved();
+
+    using OracleLib for AggregatorV3Interface;
 
     DecentralizedStableCoin private immutable i_DSCADDRESS;
 
@@ -146,7 +149,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function getTokenAmountFromUsd(address token, uint256 amountInWei) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
         return (amountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEE_PRECISION);
     }
 
@@ -209,7 +212,7 @@ contract DSCEngine is ReentrancyGuard {
 
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFee = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFee.latestRoundData();
+        (, int256 price,,,) = priceFee.staleCheckLatestRoundData(); 
         // 1 Eth = $1000
         // we will get in return 1000 * 1e8 (Becuase usdt has 8 decimals)
         // we will explicitly add 10(1e10) more decimals here in order to get exact value
